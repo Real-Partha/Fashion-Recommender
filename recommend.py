@@ -23,10 +23,10 @@ if os.path.exists(model_path):
     model = torch.load(model_path)
 else:
     # Load your dataset
-    df = pd.read_csv("test.csv")
+    df = pd.read_csv("your_dataset.csv")
 
     # Extract product display names
-    product_display_names = df['productDisplayName'].tolist()
+    product_display_names = df['product_display_name'].tolist()
 
     # Load pre-trained BERT model and tokenizer
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -38,7 +38,11 @@ else:
     # Encode all product display names and save their embeddings
     product_embeddings = []
     with torch.no_grad():
-        for product_name in encoded_product_display_names:
+        num_samples = len(encoded_product_display_names)
+        print("Training model:")
+        for i, product_name in enumerate(encoded_product_display_names):
+            if (i + 1) % 100 == 0 or i == num_samples - 1:
+                print(f"Processed {i+1}/{num_samples} samples")
             product_tensor = torch.tensor(product_name).unsqueeze(0)
             product_embedding = model(product_tensor)[0][:, 0, :].numpy()
             product_embeddings.append(product_embedding)
@@ -46,6 +50,7 @@ else:
 
     # Save the model
     torch.save(model, model_path)
+    print("Model training completed.")
 
 # Encode user query
 user_query = "your user query here"
@@ -65,5 +70,6 @@ top_k_indices = similarities.argsort()[0][-k:][::-1]
 top_k_products = [product_display_names[index] for index in top_k_indices]
 
 # Print top k most similar products
+print("Top similar products:")
 for i, product_name in enumerate(top_k_products):
     print(f"{i+1}. {product_name}")
